@@ -192,25 +192,6 @@ Applikasjonen kjører på **http://localhost:3000**
 
 Samtalen bevares i `localStorage` og gjenopprettes automatisk ved sideopplasting – også etter at du har lukket nettleserfanen. Klikk «Tøm samtale» i bunnteksten for å starte på nytt.
 
-### Autentisering
-
-Sett `ACCESS_PASSWORD` i `.env` for å kreve innlogging. Brukere sendes til `/login` og får en cookie som varer i én uke. Autentisering er deaktivert som standard – passer for lokal utvikling.
-
-### Dele med gruppemedlemmer
-
-Alle brukere som har tilgang til serveren deler samme kunnskapsbase. For å gjøre appen tilgjengelig i et nettverk:
-
-```bash
-ipconfig getifaddr en0   # macOS – finn lokal IP
-ip addr show             # Linux
-# Del adressen: http://192.168.x.x:3000
-```
-
-For å isolere dokumenter per gruppe, kjør migrasjonsfilen og send `group`-feltet i API-kall:
-
-```bash
-psql -U postgres -d rag_assistant -f src/db/migration_groups.sql
-```
 
 ---
 
