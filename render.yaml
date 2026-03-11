@@ -1,0 +1,45 @@
+databases:
+  - name: rag-assistant-db
+    databaseName: rag_assistant
+    user: rag_assistant
+
+services:
+  - type: web
+    name: rag-assistant
+    runtime: node
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: CHAT_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ACCESS_PASSWORD
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DB_HOST
+        fromDatabase:
+          name: rag-assistant-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: rag-assistant-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: rag-assistant-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: rag-assistant-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: rag-assistant-db
+          property: password

@@ -1,0 +1,37 @@
+{
+  "name": "rag-assistant",
+  "version": "1.0.0",
+  "description": "Lokal delt RAG-basert fagassistent med Node.js, Express og pgvector",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest --testPathPatterns=tests/ --forceExit",
+    "test:watch": "jest --testPathPatterns=tests/ --watch"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 10000
+  },
+  "dependencies": {
+    "@sentry/node": "^10.43.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.3.1",
+    "mammoth": "^1.8.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.52.7",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.12.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.2.2"
+  }
+}

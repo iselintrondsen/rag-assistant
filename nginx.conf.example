@@ -1,0 +1,84 @@
+# nginx.conf.example
+#
+# Eksempel-konfig for å kjøre IS-217-assistenten bak nginx med HTTPS.
+# Erstatt «ditt-domene.no» med ditt faktiske domene.
+#
+# Forutsetninger:
+#   1. nginx er installert (sudo apt install nginx  /  brew install nginx)
+#   2. TLS-sertifikat er på plass – enklest via Certbot:
+#        sudo certbot --nginx -d ditt-domene.no
+#   3. Node-appen kjører lokalt på port 3000 (eller Docker Compose)
+#
+# Plassering på Ubuntu/Debian:
+#   sudo cp nginx.conf.example /etc/nginx/sites-available/is217
+#   sudo ln -s /etc/nginx/sites-available/is217 /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+
+# ─── HTTP → HTTPS-redirect ────────────────────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ditt-domene.no;
+
+    # Certbot trenger tilgang til /.well-known/ for fornyelse
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ─── HTTPS ────────────────────────────────────────────────────────────────────
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ditt-domene.no;
+
+    # TLS-sertifikater (generert av Certbot)
+    ssl_certificate     /etc/letsencrypt/live/ditt-domene.no/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ditt-domene.no/privkey.pem;
+
+    # Sikre TLS-innstillinger
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Sikkerhetshoder
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options    nosniff                                always;
+    add_header X-Frame-Options           SAMEORIGIN                             always;
+    add_header Referrer-Policy           strict-origin-when-cross-origin        always;
+
+    # Last opp – øk max_body_size til 200 MB for store PDF-filer
+    client_max_body_size 200M;
+
+    # Proxy til Node.js-appen
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+
+        # Nødvendig for SSE (streaming)
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        keep-alive;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        # Deaktiver buffering for SSE-streaming
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 300s;
+    }
+
+    # Statiske filer kan caches lenge
+    location ~* \.(css|js|png|svg|ico|woff2?)$ {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_cache_valid  200 7d;
+        add_header         Cache-Control "public, max-age=604800, immutable";
+    }
+}

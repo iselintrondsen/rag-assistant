@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IS-217 Universellutforming</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- ─── Header ──────────────────────────────────────────────────────────── -->
+  <header class="top-header">
+    <div class="top-inner">
+      <div class="top-brand">
+        <div>
+          <h1>IS-217 Universellutforming</h1>
+          <p class="top-sub">
+            <%= canManageKb ? 'Still spørsmål om dokumentene du har lastet opp' : 'Still spørsmål om den delte kunnskapsbasen' %>
+          </p>
+        </div>
+      </div>
+      <div class="top-meta">
+        <% if (adminModeActive) { %>
+          <span class="admin-pill" title="Du har admin-rettigheter aktivert">Admin aktiv</span>
+          <a class="admin-logout-btn" href="/api/auth/admin-logout" title="Logg ut av admin-modus">Logg ut admin</a>
+        <% } %>
+        <% if (authEnabled) { %>
+          <a class="session-logout-btn" href="/api/auth/logout" title="Logg ut av appen">Logg ut</a>
+        <% } %>
+        <div id="dbStatus" class="status-pill">
+          <span class="status-dot"></span>
+          <span class="status-label">Starter…</span>
+        </div>
+      </div>
+    </div>
+    </header>
+
+  <!-- ─── Hoveddelen ──────────────────────────────────────────────────────── -->
+  <div class="app-shell">
+
+    <!-- ── Venstre sidebar: opplasting + dokumentliste ──────────────────── -->
+    <aside class="sidebar">
+      <% if (canManageKb) { %>
+      <!-- Filopplasting -->
+      <section class="card">
+        <h2 class="card-title">
+          <span>📤</span> Last opp dokument
+        </h2>
+        <form id="uploadForm" class="upload-group">
+          <label class="file-pill" for="fileInput">
+            <span id="fileLabel">Velg fil(er) (PDF, DOCX, TXT, MD)</span>
+            <input
+              type="file"
+              id="fileInput"
+              name="documents"
+              accept=".pdf,.docx,.txt,.md"
+              class="file-input"
+              multiple
+            />
+          </label>
+          <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+            Legg til dokumenter
+          </button>
+        </form>
+        <div id="uploadStatus" class="upload-status hidden"></div>
+      </section>
+
+      <!-- Dokumentliste -->
+      <section class="card">
+        <div class="card-heading">
+          <h2 class="card-title"><span>📚</span> Kunnskapsbase</h2>
+          <button id="refreshBtn" class="btn-icon" title="Oppdater liste">↻</button>
+        </div>
+        <div id="documentsList" class="doc-list">
+          <p class="empty-state">Ingen dokumenter ennå.</p>
+        </div>
+      </section>
+      <% } else { %>
+      <section class="card">
+        <h2 class="card-title">
+          <span>🔒</span> Begrenset tilgang
+        </h2>
+        <p class="empty-state">Du har kun tilgang til chat i denne delte visningen.</p>
+        <p class="empty-state">Opplasting og dokumentliste er skjult.</p>
+      </section>
+      <% } %>
+    </aside>
+
+    <!-- ── Høyre: chat ───────────────────────────────────────────────────── -->
+    <main class="chat-column">
+
+      <!-- Chat-meldinger -->
+      <div id="chatMessages" class="chat-thread">
+        <!-- Velkomstmelding med foreslåtte spørsmål -->
+        <div class="message msg-assistant" id="welcomeMessage">
+          <div class="msg-bubble">
+            <p>
+              <% if (canManageKb) { %>
+                Hei! 👋 Legg inn dokumentene dine, så kan jeg svare på spørsmål om dem.
+              <% } else { %>
+                Hei! 👋 Still spørsmål om kunnskapsbasen, så hjelper jeg deg gjerne.
+              <% } %>
+            </p>
+            <p class="message-hint">Begynn med en av disse:</p>
+            <div class="chips" id="welcomeSuggestions">
+              <button class="chip">Hva er WCAG og hva er de viktigste prinsippene?</button>
+              <button class="chip">Hva er universell utforming og hvem gjelder lovkravet for?</button>
+              <button class="chip">Hva er kravene til kontrast i digitale grensesnitt?</button>
+              <button class="chip">Oppsummer det siste dokumentet jeg lastet opp</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skrivefelt -->
+      <div class="chat-composer">
+        <div class="chat-composer-row">
+          <textarea
+            id="messageInput"
+            class="chat-input"
+            placeholder="Still et spørsmål om dokumentene dine..."
+            rows="2"
+          ></textarea>
+          <button id="sendBtn" class="btn btn-send" title="Send (Enter)">
+            <span id="sendIcon">➤</span>
+          </button>
+        </div>
+        <p class="input-hint">Trykk <kbd>Enter</kbd> for å sende · <kbd>Shift+Enter</kbd> for ny linje · <button id="clearBtn" class="clear-chat">Nullstill samtale</button></p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ─── Maler (templates) for JS ────────────────────────────────────────── -->
+
+  <!-- Mal: brukermelding -->
+  <template id="tmpl-user-message">
+    <div class="message msg-user">
+      <div class="msg-bubble"></div>
+    </div>
+  </template>
+
+  <!-- Mal: assistentmelding med kopier-knapp og kilder -->
+  <template id="tmpl-assistant-message">
+    <div class="message msg-assistant">
+      <div class="msg-bubble">
+        <button class="btn-copy" title="Kopier svar">📋</button>
+        <div class="answer-text"></div>
+        <details class="sources hidden">
+          <summary>📎 Kilder (<span class="source-count"></span>)</summary>
+          <ul class="sources-list"></ul>
+        </details>
+        <div class="suggestions-row hidden"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Mal: kilde-element -->
+  <template id="tmpl-source-row">
+    <li class="source-row">
+      <div class="source-top">
+        <span class="source-doc"></span>
+        <span class="source-score"></span>
+      </div>
+      <blockquote class="source-text"></blockquote>
+    </li>
+  </template>
+
+  <!-- Mal: loading-indikator med trinnvis statustekst -->
+  <template id="tmpl-loading">
+    <div class="message msg-assistant msg-loading" id="loadingMsg">
+      <div class="msg-bubble">
+        <span class="loading-pulse"><span>.</span><span>.</span><span>.</span></span>
+        <span class="loading-label"></span>
+      </div>
+    </div>
+  </template>
+
+  <!-- Mal: dokumentkort i sidebar (med oppsummer-knapp) -->
+  <template id="tmpl-doc-item">
+    <div class="doc-item">
+      <div class="doc-info">
+        <span class="doc-icon"></span>
+        <div class="doc-details">
+          <span class="doc-name"></span>
+          <span class="doc-meta"></span>
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button class="btn-summarize" title="Oppsummer dokument">✦</button>
+        <button class="btn-delete" title="Slett dokument">🗑</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- marked.js: fullstendig Markdown-parser (tabeller, kodeblokker, lenker o.l.) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <script>
+    window.APP_CONFIG = {
+      canManageKb: <%= canManageKb ? 'true' : 'false' %>
+    };
+  </script>
+  <script src="/js/chat.js"></script>
+</body>
+</html>
