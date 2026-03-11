@@ -29,16 +29,24 @@ if (process.env.SENTRY_DSN) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const REQUIRED_ENV = ['OPENAI_API_KEY', 'DB_HOST', 'DB_NAME', 'DB_USER'];
-const MISSING_ENV = REQUIRED_ENV.filter((k) => !process.env[k]);
+const hasLegacyDbConfig = Boolean(process.env.DB_HOST && process.env.DB_NAME && process.env.DB_USER);
+const hasPgDbConfig = Boolean(process.env.PGHOST && process.env.PGDATABASE && process.env.PGUSER);
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL || process.env.DATABASE_PRIVATE_URL);
+const hasAnyDbConfig = hasDatabaseUrl || hasLegacyDbConfig || hasPgDbConfig;
+
+const MISSING_ENV = [];
+if (!process.env.OPENAI_API_KEY) MISSING_ENV.push('OPENAI_API_KEY');
+if (!hasAnyDbConfig) {
+  MISSING_ENV.push('DATABASE_URL (eller DB_HOST/DB_NAME/DB_USER, eller PGHOST/PGDATABASE/PGUSER)');
+}
 if (MISSING_ENV.length > 0) {
   console.error(`❌ Manglende miljøvariabler: ${MISSING_ENV.join(', ')}`);
   console.error('   Kopier .env.example til .env og fyll inn verdiene.');
   process.exit(1);
 }
 
-if (!process.env.DB_PASSWORD) {
-  console.warn('⚠️ DB_PASSWORD er ikke satt – appen kan feile mot PostgreSQL.');
+if (!process.env.DB_PASSWORD && !process.env.PGPASSWORD && !hasDatabaseUrl) {
+  console.warn('⚠️ DB_PASSWORD/PGPASSWORD er ikke satt – appen kan feile mot PostgreSQL.');
 }
 
 if (process.env.NODE_ENV === 'production' && !process.env.ACCESS_PASSWORD) {

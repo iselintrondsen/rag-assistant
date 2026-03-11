@@ -131,19 +131,23 @@ cp .env.example .env
 
 Rediger `.env` og fyll inn:
 
-| Variabel          | Påkrevd | Beskrivelse                                         |
-|-------------------|---------|-----------------------------------------------------|
-| `OPENAI_API_KEY`  | ✅      | Din OpenAI-nøkkel (`sk-...`)                        |
-| `DB_HOST`         | ✅      | PostgreSQL-host (standard: `localhost`)             |
-| `DB_NAME`         | ✅      | Databasenavn (standard: `rag_assistant`)            |
-| `DB_USER`         | ✅      | Databasebruker                                      |
-| `DB_PORT`         |         | PostgreSQL-port (standard: `5432`)                  |
-| `DB_PASSWORD`     |         | Databasepassord                                     |
-| `CHAT_MODEL`      |         | GPT-modell (standard: `gpt-4o-mini`)                |
-| `ACCESS_PASSWORD` |         | Passord for innlogging – tomt = ingen autentisering |
-| `SENTRY_DSN`      |         | Sentry-DSN for feilsporing – tomt = deaktivert      |
+| Variabel          | Påkrevd | Beskrivelse                                                                 |
+|-------------------|---------|-----------------------------------------------------------------------------|
+| `OPENAI_API_KEY`  | ✅      | Din OpenAI-nøkkel (`sk-...`)                                                |
+| `DATABASE_URL`    | ✅*     | Full PostgreSQL connection string (typisk i Railway)                        |
+| `DB_HOST`         | ✅*     | PostgreSQL-host (standard: `localhost`)                                     |
+| `DB_NAME`         | ✅*     | Databasenavn (standard: `rag_assistant`)                                    |
+| `DB_USER`         | ✅*     | Databasebruker                                                              |
+| `DB_PORT`         |         | PostgreSQL-port (standard: `5432`)                                          |
+| `DB_PASSWORD`     |         | Databasepassord                                                             |
+| `CHAT_MODEL`      |         | GPT-modell (standard: `gpt-4o-mini`)                                        |
+| `ACCESS_PASSWORD` |         | Passord for innlogging – tomt = ingen autentisering                         |
+| `ADMIN_PASSWORD`  |         | Admin-passord for opplasting/sletting/listing av dokumenter                 |
+| `SENTRY_DSN`      |         | Sentry-DSN for feilsporing – tomt = deaktivert                              |
 
-Applikasjonen stopper ved oppstart dersom `OPENAI_API_KEY`, `DB_HOST`, `DB_NAME` eller `DB_USER` mangler.
+`✅*` betyr at du må sette enten `DATABASE_URL`, eller `DB_HOST` + `DB_NAME` + `DB_USER` (evt. Railway sine `PGHOST`/`PGDATABASE`/`PGUSER`).
+
+Applikasjonen stopper ved oppstart dersom `OPENAI_API_KEY` mangler, eller hvis ingen gyldig DB-konfigurasjon er satt.
 
 ### 3. Opprett databasen og kjør skjemaet
 
@@ -255,36 +259,36 @@ psql -U postgres -d rag_assistant -f src/db/migration_groups.sql
 
 ---
 
-## Deploy på Render
+## Deploy på Railway
 
-Repoet inneholder nå en ferdig Blueprint-fil: [`render.yaml`](./render.yaml).
+Repoet inneholder Railway-konfig i [`railway.json`](./railway.json).
 
-### 1. Opprett tjenester fra Blueprint
+### 1. Opprett tjenester
 
 1. Push repoet til GitHub.
-2. I Render: **New +** → **Blueprint**.
-3. Velg repoet og opprett både:
-   - `rag-assistant` (web service)
-   - `rag-assistant-db` (PostgreSQL)
+2. I Railway: **New Project** → **Deploy from GitHub repo**.
+3. Legg til PostgreSQL i samme prosjekt: **New** → **Database** → **PostgreSQL**.
 
-### 2. Sett hemmelige miljøvariabler i Render
+### 2. Sett miljøvariabler i app-servicen
 
-Disse må settes manuelt i web-servicen:
+Minst disse:
 - `OPENAI_API_KEY`
 - `ACCESS_PASSWORD`
 - `ADMIN_PASSWORD`
+- `CHAT_MODEL` (valgfritt, standard er `gpt-4o-mini`)
 
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` og `DB_PASSWORD` kobles automatisk fra databasen via `render.yaml`.
+DB-tilkobling:
+- Railway setter vanligvis `DATABASE_URL` automatisk når Postgres er koblet til service.
+- Alternativt støttes også Railway sine `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD`.
 
 ### 3. Kjør databaseskjema én gang
 
-Når databasen er opprettet må skjemaet kjøres:
+Etter at Postgres er opprettet må skjemaet kjøres mot Railway-databasen:
 
 ```bash
-psql "<EXTERNAL_DATABASE_URL>?sslmode=require" -f src/db/schema.sql
+psql "<DATABASE_URL>" -f src/db/schema.sql
 ```
 
-Bruk **External Database URL** fra Render-databasen.  
 `schema.sql` oppretter både tabeller og `vector`-utvidelsen (`CREATE EXTENSION IF NOT EXISTS vector;`).
 
 ---
