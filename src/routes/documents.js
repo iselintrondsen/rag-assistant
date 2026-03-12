@@ -9,6 +9,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/database');
+const { requireAdmin } = require('../middleware/auth');
 
 // ── GET /api/documents ────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ router.get('/', async (_req, res) => {
 
 // ── DELETE /api/documents/:id ─────────────────────────────────────────────────
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
   if (isNaN(id) || id <= 0) {

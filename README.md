@@ -95,7 +95,7 @@ Appen har to tilgangsnivåer:
 | Rolle       | Variabel          | Tilgang                                          |
 |-------------|-------------------|--------------------------------------------------|
 | Bruker      | `ACCESS_PASSWORD` | Lese og chatte                                   |
-| Admin       | `ADMIN_PASSWORD`  | Alt over + laste opp, slette og liste dokumenter |
+| Admin       | `ADMIN_PASSWORD`  | Alt over + laste opp og slette dokumenter        |
 
 Admin-innlogging nås via `/admin/login`. Ved admin-innlogging settes to cookies – admin beholder også bruker-tilgang. Begge passordene er valgfrie; uten passord er appen åpen for alle.
 
@@ -144,7 +144,7 @@ psql -U postgres -d rag_assistant -f src/db/migration_groups.sql
 |----------|----------------------------|---------|------------------------------------------------|
 | `POST`   | `/api/upload`              | Admin   | Last opp og prosesser én eller flere filer     |
 | `PUT`    | `/api/upload/:id`          | Admin   | Erstatt et eksisterende dokument               |
-| `GET`    | `/api/documents`           | Admin   | Hent liste over alle dokumenter                |
+| `GET`    | `/api/documents`           | Bruker  | Hent liste over alle dokumenter                |
 | `DELETE` | `/api/documents/:id`       | Admin   | Slett dokument og tilhørende chunks            |
 | `POST`   | `/api/chat`                | Bruker  | SSE-stream: send spørsmål, motta streamet svar |
 | `POST`   | `/api/auth/login`          | —       | Logg inn som bruker (setter cookie)            |

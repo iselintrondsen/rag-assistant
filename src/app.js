@@ -89,7 +89,7 @@ app.use(requireAuth);
 
 app.use('/api/upload',    requireAdmin, uploadLimiter, sanitizeBody, uploadRouter);
 app.use('/api/chat',      chatLimiter,   sanitizeBody, chatRouter);
-app.use('/api/documents', requireAdmin, sanitizeBody,  documentsRouter);
+app.use('/api/documents', sanitizeBody, documentsRouter);
 
 app.get('/', (req, res) => {
   const canManageKb = isAdmin(req);
