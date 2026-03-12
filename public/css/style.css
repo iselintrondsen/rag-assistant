@@ -5,22 +5,22 @@
 
 :root {
 
-  --bg:             #f0eefe;
+  --bg:             #f4f5ff;
   --surface:        #ffffff;
-  --surface-soft:   #f5f3ff;
-  --border:         #ddd6fe;
-  --primary:        #7c3aed;
-  --primary-strong: #6d28d9;
-  --primary-soft:   #ede9fe;
+  --surface-soft:   #f0f1ff;
+  --border:         #e0e7ff;
+  --primary:        #6366f1;
+  --primary-strong: #4f46e5;
+  --primary-soft:   #eef2ff;
   --accent:         #f59e0b;
   --accent-soft:    #fef3c7;
   --danger:         #ef4444;
   --danger-soft:    #fef2f2;
   --success:        #22c55e;
   --success-soft:   #f0fdf4;
-  --text:           #1e1b4b;
+  --text:           #1e293b;
   --text-muted:     #6b7280;
-  --user-bg:        #7c3aed;
+  --user-bg:        #6366f1;
   --user-text:      #ffffff;
   --assistant-bg:   #ffffff;
 
@@ -48,9 +48,9 @@ body {
   line-height: 1.6;
   color: var(--text);
   background:
-    radial-gradient(circle at 8% 0%, rgba(124, 58, 237, 0.14) 0%, transparent 42%),
-    radial-gradient(circle at 92% 3%, rgba(245, 158, 11, 0.12) 0%, transparent 35%),
-    linear-gradient(160deg, #f0eefe 0%, #ebe6fd 100%);
+    radial-gradient(circle at 8% 0%, rgba(99, 102, 241, 0.10) 0%, transparent 42%),
+    radial-gradient(circle at 92% 3%, rgba(245, 158, 11, 0.09) 0%, transparent 35%),
+    linear-gradient(160deg, #f4f5ff 0%, #eef0ff 100%);
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -66,7 +66,7 @@ body::before {
   width: 420px;
   height: 420px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(124, 58, 237, 0) 68%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 68%);
   pointer-events: none;
   z-index: 0;
 }
@@ -142,9 +142,9 @@ body::before {
   align-items: center;
   padding: 0.26rem 0.62rem;
   border-radius: 999px;
-  border: 1px solid #c4b5fd;
-  background: #f0eefe;
-  color: #6d28d9;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4f46e5;
   font-size: 0.73rem;
   font-weight: 600;
   text-decoration: none;
@@ -152,7 +152,7 @@ body::before {
 }
 
 .session-logout-btn:hover {
-  background: #ede9fe;
+  background: #e0e7ff;
 }
 
 .header-icon { font-size: 1.75rem; }
@@ -179,7 +179,7 @@ body::before {
   gap: 0.4rem;
   font-size: 0.8rem;
   color: #355161;
-  background: linear-gradient(180deg, #ffffff, #f5f3ff);
+  background: linear-gradient(180deg, #ffffff, #f0f1ff);
   border: 1px solid #d4e3e1;
   border-radius: 999px;
   padding: 0.28rem 0.78rem;
@@ -230,9 +230,18 @@ body::before {
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  overflow-y: auto;
+  overflow: hidden;
   border-right: 1px solid rgba(148, 163, 184, 0.24);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(245, 243, 255, 0.82));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(240, 241, 255, 0.82));
+}
+
+/* KB card always fills remaining sidebar height */
+.sidebar .card:last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .card {
@@ -318,14 +327,14 @@ body::before {
 .btn:active { transform: scale(0.97); }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #6366f1, #818cf8);
   color: white;
   width: 100%;
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.24);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.22);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
 }
 
 .btn-primary:disabled {
@@ -394,7 +403,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 340px;
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -418,8 +427,8 @@ body::before {
 }
 
 .doc-item:hover {
-  background: #f0eefe;
-  border-color: #c4b5fd;
+  background: #eef2ff;
+  border-color: #c7d2fe;
   transform: translateY(-1px);
 }
 
@@ -516,10 +525,10 @@ body::before {
 }
 
 .msg-user .msg-bubble {
-  background: linear-gradient(135deg, var(--user-bg), #8b5cf6);
+  background: linear-gradient(135deg, var(--user-bg), #818cf8);
   color: var(--user-text);
   border-bottom-right-radius: 0.25rem;
-  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.24);
+  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.22);
 }
 
 .msg-assistant .msg-bubble {
@@ -577,7 +586,7 @@ body::before {
   margin: 0.9rem 0;
   padding: 0.45rem 0.75rem;
   border-left: 3px solid var(--primary);
-  background: #f5f3ff;
+  background: #f0f1ff;
   border-radius: 0.4rem;
   color: #234152;
 }
@@ -723,7 +732,7 @@ body::before {
 
 .source-score {
   font-size: 0.68rem;
-  background: #ede9fe;
+  background: #e0e7ff;
   color: var(--primary-strong);
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
@@ -767,7 +776,7 @@ body::before {
 
 .chat-composer-row:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
   transform: translateY(-1px);
 }
 
@@ -790,7 +799,7 @@ body::before {
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #6366f1, #818cf8);
   color: white;
   cursor: pointer;
   display: flex;
@@ -798,10 +807,10 @@ body::before {
   justify-content: center;
   flex-shrink: 0;
   transition: background 0.15s, transform 0.08s, box-shadow 0.15s;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.38);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32);
 }
 
-.btn-send:hover:not(:disabled) { background: linear-gradient(135deg, #6d28d9, #7c3aed); }
+.btn-send:hover:not(:disabled) { background: linear-gradient(135deg, #4f46e5, #6366f1); }
 .btn-send:disabled { background: #cbd5e1; cursor: not-allowed; }
 .btn-send:active:not(:disabled) { transform: scale(0.92); }
 
@@ -994,7 +1003,7 @@ body::before {
 
 .chip:hover {
   border-color: var(--primary);
-  background: linear-gradient(180deg, #f5f3ff, #ede9fe);
+  background: linear-gradient(180deg, #f0f1ff, #e0e7ff);
   color: var(--primary-strong);
 }
 
@@ -1030,8 +1039,8 @@ body::before {
 
 .session-notice {
   align-self: center;
-  background: #f0eefe;
-  border: 1px solid #c4b5fd;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
   border-radius: 999px;
   padding: 0.25rem 0.85rem;
   font-size: 0.75rem;
@@ -1094,7 +1103,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32);
   transition: transform 0.15s, background 0.15s;
   z-index: 10;
 }
