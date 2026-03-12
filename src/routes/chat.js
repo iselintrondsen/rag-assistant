@@ -30,7 +30,7 @@ async function prepareRetrieval(question, history) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model:           'gpt-4o-mini',
+      model:           CHAT_MODEL,
       temperature:     0,
       max_tokens:      220,
       response_format: { type: 'json_object' },
@@ -70,7 +70,7 @@ async function getHistorySummary(safeHistory) {
 
   try {
     const res = await openai.chat.completions.create({
-      model:       'gpt-4o-mini',
+      model:       CHAT_MODEL,
       temperature: 0,
       max_tokens:  200,
       messages: [
@@ -98,7 +98,7 @@ async function getHistorySummary(safeHistory) {
 async function generateSuggestions(question, partialAnswer) {
   try {
     const completion = await openai.chat.completions.create({
-      model:           'gpt-4o-mini',
+      model:           CHAT_MODEL,
       temperature:     0.7,
       max_tokens:      150,
       response_format: { type: 'json_object' },

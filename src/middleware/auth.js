@@ -12,11 +12,11 @@ const ADMIN_AUTH_ENABLED = ADMIN_PASSWORD.length > 0;
 function timingSafeEqual(a, b) {
   const expected = Buffer.from(a);
   const actual = Buffer.from(b);
-  if (expected.length !== actual.length) {
-    crypto.timingSafeEqual(expected, expected);
-    return false;
-  }
-  return crypto.timingSafeEqual(expected, actual);
+  const len = Math.max(expected.length, actual.length);
+  const paddedExpected = Buffer.concat([expected, Buffer.alloc(len - expected.length)]);
+  const paddedActual = Buffer.concat([actual, Buffer.alloc(len - actual.length)]);
+  const equal = crypto.timingSafeEqual(paddedExpected, paddedActual);
+  return equal && expected.length === actual.length;
 }
 
 function isAuthenticated(req) {
