@@ -813,6 +813,7 @@ body::before {
 .btn-send:hover:not(:disabled) { background: linear-gradient(135deg, #4f46e5, #6366f1); }
 .btn-send:disabled { background: #cbd5e1; cursor: not-allowed; }
 .btn-send:active:not(:disabled) { transform: scale(0.92); }
+.send-icon { width: 26px; height: 26px; display: block; }
 
 .input-hint {
   font-size: 0.7rem;
