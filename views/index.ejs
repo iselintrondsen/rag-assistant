@@ -44,7 +44,7 @@
     <!-- ── Venstre sidebar: opplasting + dokumentliste ──────────────────── -->
     <aside class="sidebar">
       <% if (canManageKb) { %>
-      <!-- Filopplasting -->
+      <!-- Filopplasting (kun admin) -->
       <section class="card">
         <h2 class="card-title">
           <span>📤</span> Last opp dokument
@@ -67,26 +67,20 @@
         </form>
         <div id="uploadStatus" class="upload-status hidden"></div>
       </section>
+      <% } %>
 
-      <!-- Dokumentliste -->
+      <!-- Dokumentliste (alle brukere) -->
       <section class="card">
         <div class="card-heading">
           <h2 class="card-title"><span>📚</span> Kunnskapsbase</h2>
+          <% if (canManageKb) { %>
           <button id="refreshBtn" class="btn-icon" title="Oppdater liste">↻</button>
+          <% } %>
         </div>
         <div id="documentsList" class="doc-list">
-          <p class="empty-state">Ingen dokumenter ennå.</p>
+          <p class="empty-state">Laster dokumenter…</p>
         </div>
       </section>
-      <% } else { %>
-      <section class="card">
-        <h2 class="card-title">
-          <span>🔒</span> Begrenset tilgang
-        </h2>
-        <p class="empty-state">Du har kun tilgang til chat i denne delte visningen.</p>
-        <p class="empty-state">Opplasting og dokumentliste er skjult.</p>
-      </section>
-      <% } %>
     </aside>
 
     <!-- ── Høyre: chat ───────────────────────────────────────────────────── -->

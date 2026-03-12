@@ -52,11 +52,7 @@ const canManageKb = APP_CONFIG.canManageKb === true || APP_CONFIG.canManageKb ==
 
 document.addEventListener('DOMContentLoaded', () => {
   restoreSession();
-  if (canManageKb) {
-    loadDocuments();
-  } else {
-    setDbStatus(true);
-  }
+  loadDocuments();
   messageInput.focus();
   initWelcomeSuggestions();
 });
@@ -262,9 +258,12 @@ function renderDocuments(docs) {
       sendMessage();
     });
 
-    node.querySelector('.btn-delete').addEventListener('click', () =>
-      deleteDocument(doc.id, doc.original_name)
-    );
+    const deleteBtn = node.querySelector('.btn-delete');
+    if (canManageKb) {
+      deleteBtn.addEventListener('click', () => deleteDocument(doc.id, doc.original_name));
+    } else {
+      deleteBtn.remove();
+    }
 
     documentsList.appendChild(node);
   });
