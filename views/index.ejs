@@ -23,6 +23,9 @@
         </div>
       </div>
       <div class="top-meta">
+        <button id="sidebarToggleBtn" class="btn-icon mobile-nav-toggle" title="Åpne kunnskapsbasen" aria-label="Åpne kunnskapsbasen" aria-expanded="false" aria-controls="knowledgeSidebar">
+          ☰
+        </button>
         <% if (adminModeActive) { %>
           <span class="admin-pill" title="Du har admin-rettigheter aktivert">Admin aktiv</span>
           <a class="admin-logout-btn" href="/api/auth/admin-logout" title="Logg ut av admin-modus">Logg ut admin</a>
@@ -36,13 +39,16 @@
         </div>
       </div>
     </div>
-    </header>
+  </header>
 
   <!-- ─── Hoveddelen ──────────────────────────────────────────────────────── -->
   <div class="app-shell">
+    <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
     <!-- ── Venstre sidebar: opplasting + dokumentliste ──────────────────── -->
-    <aside class="sidebar">
+    <aside id="knowledgeSidebar" class="sidebar">
+      <button id="sidebarCloseBtn" class="sidebar-close-btn" title="Lukk kunnskapsbase" aria-label="Lukk kunnskapsbase">✕</button>
+
       <% if (canManageKb) { %>
       <!-- Filopplasting (kun admin) -->
       <section class="card">

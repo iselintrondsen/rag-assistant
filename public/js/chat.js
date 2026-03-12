@@ -29,6 +29,12 @@ const clearBtn           = document.getElementById('clearBtn');
 const dbStatus           = document.getElementById('dbStatus');
 const scrollToBottomBtn  = document.getElementById('scrollToBottomBtn');
 const charCount          = document.getElementById('charCount');
+const sidebarToggleBtn   = document.getElementById('sidebarToggleBtn');
+const sidebarCloseBtn    = document.getElementById('sidebarCloseBtn');
+const sidebarBackdrop    = document.getElementById('sidebarBackdrop');
+const sidebar           = document.getElementById('knowledgeSidebar');
+
+const mobileNavQuery = window.matchMedia('(max-width: 768px)');
 
 
 
@@ -53,9 +59,59 @@ const canManageKb = APP_CONFIG.canManageKb === true || APP_CONFIG.canManageKb ==
 document.addEventListener('DOMContentLoaded', () => {
   restoreSession();
   loadDocuments();
+  initSidebar();
   messageInput.focus();
   initWelcomeSuggestions();
 });
+
+
+function initSidebar() {
+  if (!sidebar || !sidebarToggleBtn || !sidebarCloseBtn || !sidebarBackdrop) return;
+
+  sidebarToggleBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (document.body.classList.contains('kb-sidebar-open')) {
+      closeSidebar();
+      return;
+    }
+    openSidebar();
+  });
+
+  sidebarCloseBtn.addEventListener('click', closeSidebar);
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+
+  mobileNavQuery.addEventListener('change', (event) => {
+    if (!event.matches) {
+      closeSidebar();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSidebar();
+  });
+
+  sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+  sidebarBackdrop.setAttribute('aria-hidden', 'true');
+}
+
+
+function isMobileViewport() {
+  return mobileNavQuery.matches;
+}
+
+function openSidebar() {
+  if (!isMobileViewport() || !sidebarToggleBtn) return;
+  document.body.classList.add('kb-sidebar-open');
+  sidebarToggleBtn.setAttribute('aria-expanded', 'true');
+  sidebarToggleBtn.setAttribute('aria-label', 'Lukk kunnskapsbase');
+}
+
+function closeSidebar() {
+  if (!sidebarToggleBtn) return;
+  document.body.classList.remove('kb-sidebar-open');
+  sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+  sidebarToggleBtn.setAttribute('aria-label', 'Åpne kunnskapsbase');
+}
 
 
 
@@ -256,6 +312,7 @@ function renderDocuments(docs) {
       messageInput.dispatchEvent(new Event('input'));
       messageInput.focus();
       sendMessage();
+      closeSidebar();
     });
 
     const deleteBtn = node.querySelector('.btn-delete');
