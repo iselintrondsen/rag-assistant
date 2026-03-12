@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IS-217 Universellutforming</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -112,6 +115,8 @@
         </div>
       </div>
 
+      <button id="scrollToBottomBtn" class="scroll-to-bottom hidden" title="Gå til bunn" aria-label="Scroll til bunn">↓</button>
+
       <!-- Skrivefelt -->
       <div class="chat-composer">
         <div class="chat-composer-row">
@@ -125,7 +130,7 @@
             <span id="sendIcon">➤</span>
           </button>
         </div>
-        <p class="input-hint">Trykk <kbd>Enter</kbd> for å sende · <kbd>Shift+Enter</kbd> for ny linje · <button id="clearBtn" class="clear-chat">Nullstill samtale</button></p>
+        <p class="input-hint"><span id="charCount" class="char-count"></span>Trykk <kbd>Enter</kbd> for å sende · <kbd>Shift+Enter</kbd> for ny linje · <button id="clearBtn" class="clear-chat">Nullstill samtale</button></p>
       </div>
 
     </main>
@@ -136,6 +141,7 @@
   <!-- Mal: brukermelding -->
   <template id="tmpl-user-message">
     <div class="message msg-user">
+      <div class="msg-meta-user"><span class="msg-label-user">Du</span></div>
       <div class="msg-bubble"></div>
     </div>
   </template>
@@ -144,7 +150,10 @@
   <template id="tmpl-assistant-message">
     <div class="message msg-assistant">
       <div class="msg-bubble">
-        <button class="btn-copy" title="Kopier svar">📋</button>
+        <div class="msg-toolbar">
+          <span class="msg-label">IS-217 Fagassistent</span>
+          <button class="btn-copy" title="Kopier svar">📋</button>
+        </div>
         <div class="answer-text"></div>
         <details class="sources hidden">
           <summary>📎 Kilder (<span class="source-count"></span>)</summary>

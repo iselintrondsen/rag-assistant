@@ -25,8 +25,10 @@ const documentsList = document.getElementById('documentsList');
 const chatMessages  = document.getElementById('chatMessages');
 const messageInput  = document.getElementById('messageInput');
 const sendBtn       = document.getElementById('sendBtn');
-const clearBtn      = document.getElementById('clearBtn');
-const dbStatus      = document.getElementById('dbStatus');
+const clearBtn           = document.getElementById('clearBtn');
+const dbStatus           = document.getElementById('dbStatus');
+const scrollToBottomBtn  = document.getElementById('scrollToBottomBtn');
+const charCount          = document.getElementById('charCount');
 
 
 
@@ -302,6 +304,7 @@ clearBtn.addEventListener('click', () => {
 messageInput.addEventListener('input', () => {
   messageInput.style.height = 'auto';
   messageInput.style.height = `${Math.min(messageInput.scrollHeight, 120)}px`;
+  updateCharCount();
 });
 
 
@@ -314,6 +317,7 @@ async function sendMessage() {
   appendUserMessage(text);
   messageInput.value = '';
   messageInput.style.height = 'auto';
+  updateCharCount();
 
   const loadingEl = showLoading();
   isWaitingForAnswer = true;
@@ -405,6 +409,7 @@ async function sendMessage() {
           }
           
           if (copyBtn) setupCopyButton(copyBtn, fullAnswer);
+          if (answerEl) wrapCodeBlocks(answerEl);
         }
 
         
@@ -513,6 +518,19 @@ function setupCopyButton(btn, markdownText) {
 
 
 
+function updateCharCount() {
+  if (!charCount) return;
+  const len = messageInput.value.length;
+  const max = 2000;
+  if (len === 0) {
+    charCount.textContent = '';
+    charCount.className = 'char-count';
+    return;
+  }
+  charCount.textContent = `${len}/${max} · `;
+  charCount.className = `char-count${len > 1800 ? ' danger' : len > 1400 ? ' warn' : ''}`;
+}
+
 function setDbStatus(ok) {
   dbStatus.className = `status-pill ${ok ? 'ok' : 'err'}`;
   dbStatus.querySelector('.status-label').textContent = ok ? 'Tilkoblet' : 'Ingen kontakt';
@@ -522,6 +540,51 @@ function setDbStatus(ok) {
 
 function scrollToBottom() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+if (scrollToBottomBtn) {
+  chatMessages.addEventListener('scroll', () => {
+    const distFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+    if (distFromBottom > 250) {
+      scrollToBottomBtn.classList.remove('hidden');
+    } else {
+      scrollToBottomBtn.classList.add('hidden');
+    }
+  });
+  scrollToBottomBtn.addEventListener('click', () => {
+    scrollToBottom();
+    scrollToBottomBtn.classList.add('hidden');
+  });
+}
+
+function wrapCodeBlocks(container) {
+  container.querySelectorAll('pre').forEach(pre => {
+    if (pre.parentElement.classList.contains('code-wrapper')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-wrapper';
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'btn-copy-code';
+    btn.textContent = 'Kopier';
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')?.textContent ?? pre.textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      btn.textContent = '✓ Kopiert';
+      setTimeout(() => { btn.textContent = 'Kopier'; }, 2000);
+    });
+    wrapper.prepend(btn);
+  });
 }
 
 function truncate(str, maxLen) {
