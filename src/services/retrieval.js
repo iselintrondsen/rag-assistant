@@ -50,6 +50,29 @@ async function retrieveWithMultipleQueries(queries, topK = TOP_K, groupId = null
     .slice(0, topK);
 }
 
+async function retrieveRecentChunks(limit = TOP_K, groupId = null) {
+  const groupFilter = groupId ? 'WHERE d.group_id = $2' : '';
+  const params = groupId ? [limit, groupId] : [limit];
+
+  const result = await db.query(
+    `SELECT
+       c.id,
+       c.content,
+       c.chunk_index,
+       d.original_name AS document_name,
+       d.id AS document_id,
+       0.0 AS similarity
+     FROM chunks c
+     JOIN documents d ON c.document_id = d.id
+     ${groupFilter}
+     ORDER BY d.uploaded_at DESC, c.chunk_index ASC
+     LIMIT $1`,
+    params
+  );
+
+  return result.rows;
+}
+
 function hasStrongEnoughContext(chunks) {
   if (!chunks || chunks.length === 0) return false;
   return chunks.some((c) => parseFloat(c.similarity) >= MIN_SIMILARITY);
@@ -58,6 +81,7 @@ function hasStrongEnoughContext(chunks) {
 module.exports = {
   retrieveRelevantChunks,
   retrieveWithMultipleQueries,
+  retrieveRecentChunks,
   hasStrongEnoughContext,
   TOP_K,
   MIN_SIMILARITY,

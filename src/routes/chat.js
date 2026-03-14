@@ -6,6 +6,7 @@ const OpenAI  = require('openai');
 
 const {
   retrieveWithMultipleQueries,
+  retrieveRecentChunks,
   hasStrongEnoughContext,
 } = require('../services/retrieval');
 
@@ -177,7 +178,14 @@ router.post('/', async (req, res) => {
 
     sendEvent({ status: 'searching', text: `Søker med ${queries.length} søkeuttrykk…` });
 
-    const chunks = await retrieveWithMultipleQueries(queries, undefined, groupId);
+    let chunks = await retrieveWithMultipleQueries(queries, undefined, groupId);
+
+    // Fallback: hvis semantisk søk ikke finner noe, bruk nyeste chunks i basen
+    // slik at assistenten fortsatt kan prøve å hjelpe på nylig opplastet innhold.
+    if (!chunks || chunks.length === 0) {
+      sendEvent({ status: 'searching', text: 'Fant ingen direkte treff. Sjekker nyeste dokumenter…' });
+      chunks = await retrieveRecentChunks(12, groupId);
+    }
 
 
     const hasAnyChunks = chunks && chunks.length > 0;
