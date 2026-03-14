@@ -7,6 +7,9 @@ const OpenAI  = require('openai');
 const {
   retrieveWithMultipleQueries,
   retrieveRecentChunks,
+  findDocumentByName,
+  retrieveChunksForDocument,
+  retrieveRelevantChunksInDocument,
   hasStrongEnoughContext,
 } = require('../services/retrieval');
 
@@ -21,6 +24,23 @@ const FALLBACK_MESSAGE =
 const MAX_HISTORY          = 10;
 const SUMMARIZE_THRESHOLD  = 8;   // Antall meldinger før vi begynner å oppsummere
 const KEEP_VERBATIM        = 4;   // Antall nyeste meldinger vi alltid beholder urørt
+
+function extractDocumentName(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const quoted = text.match(/["'“”]([^"'“”]+\.(pdf|docx|txt|md))["'“”]/i);
+  if (quoted && quoted[1]) return quoted[1].trim();
+
+  const plain = text.match(/\b([^\s"'“”]+\.(pdf|docx|txt|md))\b/i);
+  if (plain && plain[1]) return plain[1].trim();
+
+  return null;
+}
+
+function isSummaryRequest(text) {
+  if (!text || typeof text !== 'string') return false;
+  return /\b(oppsummer|oppsummering|sammendrag|kort sammendrag)\b/i.test(text);
+}
 
 
 async function prepareRetrieval(question, history) {
@@ -176,9 +196,26 @@ router.post('/', async (req, res) => {
       getHistorySummary(safeHistory),
     ]);
 
-    sendEvent({ status: 'searching', text: `Søker med ${queries.length} søkeuttrykk…` });
+    const requestedDocName = extractDocumentName(message.trim());
+    const wantsSummary = isSummaryRequest(message.trim());
+    let chunks = [];
+    let focusedDocument = null;
 
-    let chunks = await retrieveWithMultipleQueries(queries, undefined, groupId);
+    if (requestedDocName) {
+      sendEvent({ status: 'searching', text: `Leter i "${requestedDocName}"…` });
+      focusedDocument = await findDocumentByName(requestedDocName, groupId);
+
+      if (focusedDocument) {
+        chunks = wantsSummary
+          ? await retrieveChunksForDocument(focusedDocument.id, 24)
+          : await retrieveRelevantChunksInDocument(message.trim(), focusedDocument.id, 16);
+      }
+    }
+
+    if (!chunks || chunks.length === 0) {
+      sendEvent({ status: 'searching', text: `Søker med ${queries.length} søkeuttrykk…` });
+      chunks = await retrieveWithMultipleQueries(queries, undefined, groupId);
+    }
 
     // Fallback: hvis semantisk søk ikke finner noe, bruk nyeste chunks i basen
     // slik at assistenten fortsatt kan prøve å hjelpe på nylig opplastet innhold.
@@ -221,6 +258,8 @@ Slik jobber du:
   - Ved lengre svar (mer enn ca. 6 linjer), bruk korte Markdown-overskrifter
 - Du husker samtalehistorikken og svarer naturlig på oppfølgingsspørsmål
 - Hvis kildene ikke gir et godt nok svar, sier du ærlig fra uten å dikte opp noe
+- Når du får kilder: ikke si at du "ikke har tilgang" til dokumentet. Forklar heller hva kildene faktisk viser.
+- Hvis brukeren ba om et spesifikt dokument: si tydelig om kildene er fra dette dokumentet eller ikke.
 ${fallbackNotice}
 
 Tilgjengelige kilder:

@@ -73,6 +73,84 @@ async function retrieveRecentChunks(limit = TOP_K, groupId = null) {
   return result.rows;
 }
 
+async function findDocumentByName(documentName, groupId = null) {
+  if (!documentName || typeof documentName !== 'string') return null;
+
+  const trimmed = documentName.trim();
+  if (!trimmed) return null;
+
+  const paramsExact = groupId ? [trimmed, groupId] : [trimmed];
+  const groupFilter = groupId ? 'AND group_id = $2' : '';
+
+  const exact = await db.query(
+    `SELECT id, original_name, uploaded_at
+     FROM documents
+     WHERE lower(original_name) = lower($1)
+     ${groupFilter}
+     ORDER BY uploaded_at DESC
+     LIMIT 1`,
+    paramsExact
+  );
+  if (exact.rows.length > 0) return exact.rows[0];
+
+  const likeTerm = `%${trimmed}%`;
+  const paramsLike = groupId ? [likeTerm, groupId] : [likeTerm];
+  const like = await db.query(
+    `SELECT id, original_name, uploaded_at
+     FROM documents
+     WHERE lower(original_name) LIKE lower($1)
+     ${groupFilter}
+     ORDER BY uploaded_at DESC
+     LIMIT 1`,
+    paramsLike
+  );
+
+  return like.rows[0] || null;
+}
+
+async function retrieveChunksForDocument(documentId, limit = TOP_K) {
+  const result = await db.query(
+    `SELECT
+       c.id,
+       c.content,
+       c.chunk_index,
+       d.original_name AS document_name,
+       d.id AS document_id,
+       1.0 AS similarity
+     FROM chunks c
+     JOIN documents d ON c.document_id = d.id
+     WHERE c.document_id = $1
+     ORDER BY c.chunk_index ASC
+     LIMIT $2`,
+    [documentId, limit]
+  );
+
+  return result.rows;
+}
+
+async function retrieveRelevantChunksInDocument(query, documentId, topK = TOP_K) {
+  const queryEmbedding = await createQueryEmbedding(query);
+  const embeddingStr = `[${queryEmbedding.join(',')}]`;
+
+  const result = await db.query(
+    `SELECT
+       c.id,
+       c.content,
+       c.chunk_index,
+       d.original_name AS document_name,
+       d.id AS document_id,
+       1 - (c.embedding <=> $1::vector) AS similarity
+     FROM chunks c
+     JOIN documents d ON c.document_id = d.id
+     WHERE c.document_id = $2
+     ORDER BY c.embedding <=> $1::vector
+     LIMIT $3`,
+    [embeddingStr, documentId, topK]
+  );
+
+  return result.rows;
+}
+
 function hasStrongEnoughContext(chunks) {
   if (!chunks || chunks.length === 0) return false;
   return chunks.some((c) => parseFloat(c.similarity) >= MIN_SIMILARITY);
@@ -82,6 +160,9 @@ module.exports = {
   retrieveRelevantChunks,
   retrieveWithMultipleQueries,
   retrieveRecentChunks,
+  findDocumentByName,
+  retrieveChunksForDocument,
+  retrieveRelevantChunksInDocument,
   hasStrongEnoughContext,
   TOP_K,
   MIN_SIMILARITY,
