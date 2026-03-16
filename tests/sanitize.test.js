@@ -14,6 +14,10 @@ function mockReq(body = {}, files = null) {
   return { body, files, path: '/api/chat' };
 }
 
+function mockSingleFileReq(body = {}, file = null) {
+  return { body, file, path: '/api/upload/1' };
+}
+
 function mockRes() {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
@@ -81,15 +85,25 @@ describe('validateUploadRequest', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('avviser fil over 50 MB', () => {
+  test('avviser fil over 20 MB', () => {
     const req = mockReq({}, [{
       mimetype: 'application/pdf',
-      size: 51 * 1024 * 1024,
+      size: 21 * 1024 * 1024,
       originalname: 'stor.pdf',
     }]);
     const res = mockRes();
     validateUploadRequest(req, res, next);
     expect(res.status).toHaveBeenCalledWith(413);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  test('godtar single-file request via req.file', () => {
+    const req = mockSingleFileReq({}, {
+      mimetype: 'application/pdf',
+      size: 1024,
+      originalname: 'reupload.pdf',
+    });
+    validateUploadRequest(req, mockRes(), next);
+    expect(next).toHaveBeenCalled();
   });
 });

@@ -195,7 +195,7 @@ router.post('/', upload.array('documents', MAX_FILES), validateUploadRequest, as
 // Sletter alle gamle chunks og embeddings, prosesserer den nye filen,
 // og beholder samme dokument-ID slik at historiske referanser fremdeles gjelder.
 
-router.put('/:id', upload.single('document'), async (req, res) => {
+router.put('/:id', upload.single('document'), validateUploadRequest, async (req, res) => {
   const docId = parseInt(req.params.id, 10);
   if (isNaN(docId)) {
     return res.status(400).json({ error: 'Ugyldig dokument-ID.' });
@@ -223,7 +223,7 @@ router.put('/:id', upload.single('document'), async (req, res) => {
     // 2. Oppdater dokumentmetadata
     await db.query(
       `UPDATE documents
-         SET original_name = $1, filename = $2, file_type = $3, file_size = $4, created_at = NOW()
+         SET original_name = $1, filename = $2, file_type = $3, file_size = $4, uploaded_at = NOW()
        WHERE id = $5`,
       [originalname, file.filename, fileType, file.size, docId]
     );

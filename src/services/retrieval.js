@@ -3,12 +3,35 @@ const { createQueryEmbedding } = require('./embeddings');
 
 const TOP_K = 16;
 const MIN_SIMILARITY = 0.35;
+let groupIdColumnSupported = null;
+
+async function supportsGroupIdColumn() {
+  if (groupIdColumnSupported !== null) return groupIdColumnSupported;
+
+  try {
+    const result = await db.query(
+      `SELECT 1
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'documents'
+         AND column_name = 'group_id'
+       LIMIT 1`
+    );
+
+    groupIdColumnSupported = result.rowCount > 0;
+  } catch {
+    groupIdColumnSupported = false;
+  }
+
+  return groupIdColumnSupported;
+}
 
 async function retrieveRelevantChunks(query, topK = TOP_K, groupId = null) {
   const queryEmbedding = await createQueryEmbedding(query);
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
-  const groupFilter = groupId ? 'AND d.group_id = $3' : '';
-  const params = groupId ? [embeddingStr, topK, groupId] : [embeddingStr, topK];
+  const useGroupFilter = Boolean(groupId) && await supportsGroupIdColumn();
+  const groupFilter = useGroupFilter ? 'AND d.group_id = $3' : '';
+  const params = useGroupFilter ? [embeddingStr, topK, groupId] : [embeddingStr, topK];
 
   const result = await db.query(
     `SELECT
@@ -51,8 +74,9 @@ async function retrieveWithMultipleQueries(queries, topK = TOP_K, groupId = null
 }
 
 async function retrieveRecentChunks(limit = TOP_K, groupId = null) {
-  const groupFilter = groupId ? 'WHERE d.group_id = $2' : '';
-  const params = groupId ? [limit, groupId] : [limit];
+  const useGroupFilter = Boolean(groupId) && await supportsGroupIdColumn();
+  const groupFilter = useGroupFilter ? 'WHERE d.group_id = $2' : '';
+  const params = useGroupFilter ? [limit, groupId] : [limit];
 
   const result = await db.query(
     `SELECT
@@ -79,8 +103,9 @@ async function findDocumentByName(documentName, groupId = null) {
   const trimmed = documentName.trim();
   if (!trimmed) return null;
 
-  const paramsExact = groupId ? [trimmed, groupId] : [trimmed];
-  const groupFilter = groupId ? 'AND group_id = $2' : '';
+  const useGroupFilter = Boolean(groupId) && await supportsGroupIdColumn();
+  const paramsExact = useGroupFilter ? [trimmed, groupId] : [trimmed];
+  const groupFilter = useGroupFilter ? 'AND group_id = $2' : '';
 
   const exact = await db.query(
     `SELECT id, original_name, uploaded_at
@@ -94,7 +119,7 @@ async function findDocumentByName(documentName, groupId = null) {
   if (exact.rows.length > 0) return exact.rows[0];
 
   const likeTerm = `%${trimmed}%`;
-  const paramsLike = groupId ? [likeTerm, groupId] : [likeTerm];
+  const paramsLike = useGroupFilter ? [likeTerm, groupId] : [likeTerm];
   const like = await db.query(
     `SELECT id, original_name, uploaded_at
      FROM documents
@@ -109,8 +134,9 @@ async function findDocumentByName(documentName, groupId = null) {
 }
 
 async function getLatestDocument(groupId = null) {
-  const groupFilter = groupId ? 'WHERE group_id = $1' : '';
-  const params = groupId ? [groupId] : [];
+  const useGroupFilter = Boolean(groupId) && await supportsGroupIdColumn();
+  const groupFilter = useGroupFilter ? 'WHERE group_id = $1' : '';
+  const params = useGroupFilter ? [groupId] : [];
 
   const result = await db.query(
     `SELECT id, original_name, uploaded_at

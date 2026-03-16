@@ -78,6 +78,7 @@ npm test        # Kjør tester
 | `DB_PASSWORD`       |         | Databasepassord                                                   |
 | `DB_PORT`           |         | PostgreSQL-port (standard: `5432`)                                |
 | `DB_SSL`            |         | Sett til `true` for SSL-tilkobling (kreves på Railway)            |
+| `AUTH_COOKIE_SECRET`|         | Hemmelig nøkkel for signering av auth-cookies (anbefalt i prod)   |
 | `ACCESS_PASSWORD`   |         | Passord for vanlige brukere – tomt = ingen autentisering          |
 | `ADMIN_PASSWORD`    |         | Passord for admin (opplasting, sletting, dokumentliste)           |
 | `SENTRY_DSN`        |         | Sentry-DSN for feilsporing – tomt = deaktivert                    |
@@ -97,7 +98,7 @@ Appen har to tilgangsnivåer:
 | Bruker      | `ACCESS_PASSWORD` | Lese og chatte                                   |
 | Admin       | `ADMIN_PASSWORD`  | Alt over + laste opp og slette dokumenter        |
 
-Admin-innlogging nås via `/admin/login`. Ved admin-innlogging settes to cookies – admin beholder også bruker-tilgang. Begge passordene er valgfrie; uten passord er appen åpen for alle.
+Admin-innlogging nås via `/admin/login`. Ved admin-innlogging settes to signerte session-cookies (bruker + admin) – admin beholder også bruker-tilgang. `AUTH_COOKIE_SECRET` anbefales i produksjon for sterkere signering. Begge passordene er valgfrie; uten passord er appen åpen for alle.
 
 ---
 
@@ -106,8 +107,8 @@ Admin-innlogging nås via `/admin/login`. Ved admin-innlogging settes to cookies
 ### Laste opp dokumenter (krever admin)
 
 1. Logg inn som admin på `/admin/login`.
-2. Klikk **Velg fil(er)** i sidepanelet – opptil 50 filer samtidig (PDF, DOCX, TXT, MD).
-3. Klikk **Last opp og prosesser** (~10–60 sek avhengig av filstørrelse).
+2. Klikk **Velg fil(er)** i sidepanelet – opptil 50 filer samtidig (PDF, DOCX, TXT, MD, maks 20 MB per fil).
+3. Klikk **Legg til dokumenter** (~10–60 sek avhengig av filstørrelse).
 4. Klikk ✦-ikonet ved et dokument for raskt AI-sammendrag.
 5. Re-upload et dokument via `PUT /api/upload/:id` for å erstatte det med en ny versjon.
 
@@ -122,7 +123,7 @@ Admin-innlogging nås via `/admin/login`. Ved admin-innlogging settes to cookies
 
 ### Samtalehistorikk
 
-Samtalen bevares i `localStorage` og gjenopprettes automatisk ved sideopplasting. Klikk **Tøm samtale** i bunnteksten for å starte på nytt.
+Samtalen bevares i `localStorage` og gjenopprettes automatisk ved sideopplasting. Klikk **Nullstill samtale** i bunnteksten for å starte på nytt.
 
 ### Gruppe-isolasjon (valgfritt)
 
@@ -242,8 +243,12 @@ rag-assistant/
 │       ├── embeddings.js           # Tekst → OpenAI-vektorer
 │       └── retrieval.js            # Multi-query pgvector-søk med group_id-støtte
 ├── tests/
-│   ├── sanitize.test.js            # 12 unit-tester for sanitering
-│   └── chunker.test.js             # 7 unit-tester for chunking
+│   ├── sanitize.test.js            # Unit-tester for sanitering
+│   ├── chunker.test.js             # Unit-tester for chunking
+│   └── auth.test.js                # Integrasjonstester for auth-ruter/middleware
+│   ├── upload.route.test.js         # Integrasjonstester for upload/re-upload
+│   ├── retrieval.test.js            # Tester for retrieval og group-fallback
+│   └── chat.route.test.js           # Integrasjonstester for chat/SSE
 ├── views/
 │   └── index.ejs                   # Hoved-HTML (EJS-mal)
 ├── public/
@@ -280,3 +285,36 @@ rag-assistant/
 | express-rate-limit | Egendefinert | Enkel beskyttelse mot API-misbruk |
 | Jest | Mocha, Vitest | Innebygd mocking, ingen konfig nødvendig |
 | Sentry | Datadog | Gratis tier, automatisk fangst av 5xx-feil |
+
+---
+
+## Anbefalt teststruktur (konkret)
+
+Start med disse testene i denne rekkefølgen:
+
+1. **Auth (høyest verdi først)**
+  - Verifiser login/logout-flyt, cookie-setting og tilgangskontroll for bruker/admin.
+  - Fil: `tests/auth.test.js`
+
+2. **Upload + validering**
+  - Filtype, størrelsesgrenser, tom opplasting, og at feil gir korrekt statuskode.
+  - Filer: `tests/sanitize.test.js` + ny `tests/upload.route.test.js`
+
+3. **Retrieval-logikk**
+  - Håndtering av `group_id` med/uten migrasjon, sortering på relevans og fallback til nyeste chunks.
+  - Ny fil: `tests/retrieval.test.js`
+
+4. **Chat-rute (SSE)**
+  - Input-validering, status-hendelser og robust feilrespons.
+  - Ny fil: `tests/chat.route.test.js`
+
+5. **Smoke-test for app-oppsett**
+  - Verifiser at appen starter med forventede miljøvariabler og ruter.
+  - Ny fil: `tests/app.smoke.test.js`
+
+Jest har også en global test-helper i `tests/setup.js`:
+
+- `silenceConsoleWarn()`
+- `silenceConsoleError()`
+
+Disse kan brukes i enkelt-tester når du bevisst tester feilflyt og vil unngå støy i testoutput. Standardoppførsel er uendret (warnings/errors vises fortsatt hvis du ikke kaller helperen).

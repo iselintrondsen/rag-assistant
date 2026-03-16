@@ -31,7 +31,11 @@ function sanitizeBody(req, _res, next) {
 }
 
 function validateUploadRequest(req, res, next) {
-  if (!req.files || req.files.length === 0) {
+  const files = Array.isArray(req.files)
+    ? req.files
+    : (req.file ? [req.file] : []);
+
+  if (files.length === 0) {
     return res.status(400).json({ error: 'Ingen filer ble lastet opp.' });
   }
 
@@ -46,7 +50,9 @@ function validateUploadRequest(req, res, next) {
 
   const allowedExtensions = new Set(['pdf', 'docx', 'txt', 'md']);
 
-  for (const file of req.files) {
+  const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
+
+  for (const file of files) {
     const originalName = typeof file.originalname === 'string' ? file.originalname : '';
     const ext = originalName.includes('.')
       ? originalName.split('.').pop().toLowerCase()
@@ -61,9 +67,9 @@ function validateUploadRequest(req, res, next) {
       });
     }
 
-    if (file.size > 50 * 1024 * 1024) {
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
       return res.status(413).json({
-        error: `Filen "${file.originalname}" er for stor (maks 50 MB).`,
+        error: `Filen "${file.originalname}" er for stor (maks 20 MB).`,
       });
     }
   }

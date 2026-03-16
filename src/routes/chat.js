@@ -18,10 +18,6 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const CHAT_MODEL = process.env.CHAT_MODEL || 'gpt-4o-mini';
 
-const FALLBACK_MESSAGE =
-  'Jeg finner dessverre ikke et godt nok svar på dette i dokumentene dine. ' +
-  'Prøv gjerne å omformulere spørsmålet, eller last opp et dokument som dekker temaet.';
-
 const MAX_HISTORY          = 10;
 const SUMMARIZE_THRESHOLD  = 8;   // Antall meldinger før vi begynner å oppsummere
 const KEEP_VERBATIM        = 4;   // Antall nyeste meldinger vi alltid beholder urørt

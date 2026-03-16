@@ -6,8 +6,17 @@ const router = express.Router();
 
 const PASSWORD = process.env.ACCESS_PASSWORD || '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const COOKIE_SECRET = process.env.AUTH_COOKIE_SECRET || [PASSWORD, ADMIN_PASSWORD].join('|');
 const AUTH_ENABLED = PASSWORD.length > 0;
 const ADMIN_AUTH_ENABLED = ADMIN_PASSWORD.length > 0;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: 'strict',
+  maxAge: SESSION_TTL_MS,
+  secure: process.env.NODE_ENV === 'production',
+};
 
 function timingSafeEqual(a, b) {
   const expected = Buffer.from(a);
@@ -19,14 +28,52 @@ function timingSafeEqual(a, b) {
   return equal && expected.length === actual.length;
 }
 
+function createSessionToken(type) {
+  const payload = {
+    type,
+    exp: Date.now() + SESSION_TTL_MS,
+  };
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', COOKIE_SECRET)
+    .update(encodedPayload)
+    .digest('base64url');
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifySessionToken(token, expectedType) {
+  if (!token || typeof token !== 'string') return false;
+  if (!COOKIE_SECRET) return false;
+
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+
+  const [encodedPayload, signature] = parts;
+  const expectedSignature = crypto
+    .createHmac('sha256', COOKIE_SECRET)
+    .update(encodedPayload)
+    .digest('base64url');
+
+  if (!timingSafeEqual(signature, expectedSignature)) return false;
+
+  try {
+    const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
+    if (!payload || payload.type !== expectedType) return false;
+    if (typeof payload.exp !== 'number') return false;
+    return payload.exp > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 function isAuthenticated(req) {
   if (!AUTH_ENABLED) return true;
-  return req.cookies && timingSafeEqual(req.cookies['rag_session'] || '', PASSWORD);
+  return req.cookies && verifySessionToken(req.cookies['rag_session'] || '', 'user');
 }
 
 function isAdmin(req) {
   if (!ADMIN_AUTH_ENABLED) return true;
-  return req.cookies && timingSafeEqual(req.cookies['rag_admin'] || '', ADMIN_PASSWORD);
+  return req.cookies && verifySessionToken(req.cookies['rag_admin'] || '', 'admin');
 }
 
 function requireAuth(req, res, next) {
@@ -86,12 +133,7 @@ router.post('/api/auth/login', express.urlencoded({ extended: false }), (req, re
   const { password } = req.body;
 
   if (!AUTH_ENABLED || timingSafeEqual(password || '', PASSWORD)) {
-    res.cookie('rag_session', PASSWORD, {
-      httpOnly: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie('rag_session', createSessionToken('user'), cookieOptions);
     return res.redirect('/');
   }
 
@@ -144,20 +186,10 @@ router.post('/api/auth/admin-login', express.urlencoded({ extended: false }), (r
   }
 
   if (AUTH_ENABLED) {
-    res.cookie('rag_session', PASSWORD, {
-      httpOnly: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie('rag_session', createSessionToken('user'), cookieOptions);
   }
 
-  res.cookie('rag_admin', ADMIN_PASSWORD, {
-    httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === 'production',
-  });
+  res.cookie('rag_admin', createSessionToken('admin'), cookieOptions);
   return res.redirect('/');
 });
 

@@ -53,6 +53,10 @@ if (process.env.NODE_ENV === 'production' && !process.env.ACCESS_PASSWORD) {
   console.warn('⚠️ ACCESS_PASSWORD er ikke satt i produksjon – appen er åpen for alle.');
 }
 
+if (process.env.NODE_ENV === 'production' && !process.env.AUTH_COOKIE_SECRET) {
+  console.warn('⚠️ AUTH_COOKIE_SECRET er ikke satt i produksjon – anbefales for trygg signering av auth-cookies.');
+}
+
 app.use(
   morgan('combined', {
     stream: { write: (msg) => logger.http(msg.trim()) },
