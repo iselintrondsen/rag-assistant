@@ -85,7 +85,7 @@ async function processFile(file) {
 
     // Parse tekst
     const text = await parseFile(filePath, fileType);
-    if (!text || text.trim().length < 50) {
+    if (!text || text.trim().length < 10) {
       throw new Error(
         'Filen ser ut til å være tom eller inneholder for lite tekst. ' +
         'Sjekk at filen ikke er passordbeskyttet eller skannet uten OCR.'

@@ -8,6 +8,7 @@ const {
   retrieveWithMultipleQueries,
   retrieveRecentChunks,
   findDocumentByName,
+  getLatestDocument,
   retrieveChunksForDocument,
   retrieveRelevantChunksInDocument,
   hasStrongEnoughContext,
@@ -40,6 +41,11 @@ function extractDocumentName(text) {
 function isSummaryRequest(text) {
   if (!text || typeof text !== 'string') return false;
   return /\b(oppsummer|oppsummering|sammendrag|kort sammendrag)\b/i.test(text);
+}
+
+function isLatestDocumentRequest(text) {
+  if (!text || typeof text !== 'string') return false;
+  return /\b(siste|nyeste|nytt|seneste)\b.*\b(dokument|fil)\b|\b(dokument|fil)\b.*\b(siste|nyeste|nytt|seneste)\b/i.test(text);
 }
 
 
@@ -196,12 +202,24 @@ router.post('/', async (req, res) => {
       getHistorySummary(safeHistory),
     ]);
 
+    const isLatestRequest = isLatestDocumentRequest(message.trim());
     const requestedDocName = extractDocumentName(message.trim());
     const wantsSummary = isSummaryRequest(message.trim());
     let chunks = [];
     let focusedDocument = null;
 
-    if (requestedDocName) {
+    if (!requestedDocName && isLatestRequest) {
+      sendEvent({ status: 'searching', text: 'Henter nyeste dokument…' });
+      focusedDocument = await getLatestDocument(groupId);
+
+      if (focusedDocument) {
+        chunks = wantsSummary
+          ? await retrieveChunksForDocument(focusedDocument.id, 24)
+          : await retrieveRelevantChunksInDocument(message.trim(), focusedDocument.id, 16);
+      }
+    }
+
+    if (!focusedDocument && requestedDocName) {
       sendEvent({ status: 'searching', text: `Leter i "${requestedDocName}"…` });
       focusedDocument = await findDocumentByName(requestedDocName, groupId);
 

@@ -108,6 +108,22 @@ async function findDocumentByName(documentName, groupId = null) {
   return like.rows[0] || null;
 }
 
+async function getLatestDocument(groupId = null) {
+  const groupFilter = groupId ? 'WHERE group_id = $1' : '';
+  const params = groupId ? [groupId] : [];
+
+  const result = await db.query(
+    `SELECT id, original_name, uploaded_at
+     FROM documents
+     ${groupFilter}
+     ORDER BY uploaded_at DESC
+     LIMIT 1`,
+    params
+  );
+
+  return result.rows[0] || null;
+}
+
 async function retrieveChunksForDocument(documentId, limit = TOP_K) {
   const result = await db.query(
     `SELECT
@@ -163,6 +179,7 @@ module.exports = {
   findDocumentByName,
   retrieveChunksForDocument,
   retrieveRelevantChunksInDocument,
+  getLatestDocument,
   hasStrongEnoughContext,
   TOP_K,
   MIN_SIMILARITY,

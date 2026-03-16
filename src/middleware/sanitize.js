@@ -35,15 +35,27 @@ function validateUploadRequest(req, res, next) {
     return res.status(400).json({ error: 'Ingen filer ble lastet opp.' });
   }
 
-  const allowed = [
+  const allowedMimeTypes = new Set([
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
     'text/markdown',
-  ];
+    'text/x-markdown',
+    'application/octet-stream',
+  ]);
+
+  const allowedExtensions = new Set(['pdf', 'docx', 'txt', 'md']);
 
   for (const file of req.files) {
-    if (!allowed.includes(file.mimetype)) {
+    const originalName = typeof file.originalname === 'string' ? file.originalname : '';
+    const ext = originalName.includes('.')
+      ? originalName.split('.').pop().toLowerCase()
+      : '';
+
+    const hasAllowedExtension = allowedExtensions.has(ext);
+    const hasAllowedMimeType = allowedMimeTypes.has(file.mimetype);
+
+    if (!hasAllowedExtension && !hasAllowedMimeType) {
       return res.status(415).json({
         error: `Filtypen "${file.mimetype}" støttes ikke. Tillatte typer: PDF, DOCX, TXT, MD.`,
       });
